@@ -39,8 +39,8 @@ def minimaxDecision(grid, maxdepth):
     #print()
     max_move = None
     max_util = 0
-    alpha = grid.getMaxTile()
-    beta = sys.maxsize
+    alpha = 0
+    beta = 1
     for move in grid.getAvailableMoves():
         util = minValue(move[1], maxdepth, alpha, beta)
         #print("maxdepth = ", maxdepth)
@@ -59,7 +59,7 @@ def maxValue(grid, maxdepth, alpha, beta):
         #print("eval = ", eval(grid))
         return eval(grid)
     moves = grid.getAvailableMoves()
-    max_util = grid.getMaxTile()
+    max_util = 0
     # terminal test
     if len(moves) == 0:
         return eval(grid)
@@ -84,19 +84,32 @@ def minValue(grid, maxdepth, alpha, beta):
     if len(cells) == 0:
         return eval(grid)
     else:
-        min_util = grid.getMaxTile()
+        min_util = 1
         for cell in cells:
-            for val in (2,4):
-                newgrid = grid.clone()
-                newgrid.insertTile(cell, val)
-                util = maxValue(newgrid, maxdepth - 1, alpha, beta)
-                #print("maxdepth = ", maxdepth)
-                #print("maxvalue = ", util)
-                min_util = min(util, min_util)
-                if min_util <= alpha:
-                    return min_util
-                beta = min(beta, util)
-        return min_util
+            newgrid = grid.clone()
+            newgrid.insertTile(cell, 2)
+            util = maxValue(newgrid, maxdepth - 1, alpha, beta)
+            #print("maxdepth = ", maxdepth)
+            #print("maxvalue = ", util)
+            min_util = min(util, min_util)
+            if min_util <= alpha:
+                return min_util
+            beta = min(beta, util)
+        min_util_2 = min_util
+
+        min_util = 1
+        for cell in cells:
+            newgrid = grid.clone()
+            newgrid.insertTile(cell, 4)
+            util = maxValue(newgrid, maxdepth - 1, alpha, beta)
+            #print("maxdepth = ", maxdepth)
+            #print("maxvalue = ", util)
+            min_util = min(util, min_util)
+            if min_util <= alpha:
+                return min_util
+            beta = min(beta, util)
+        min_util_4 = min_util
+        return .9 * min_util_2 + .1 * min_util_4
 
 
 def eval(grid):
@@ -104,7 +117,7 @@ def eval(grid):
     nec = number_empty_cells(grid)/16
     nav = number_adjacent_values(grid)/24
     mic = int(is_max_in_corner(grid))
-    print("nec = {}, nav = {}, mic = {}".format(nec, nav, mic))
+    #print("nec = {}, nav = {}, mic = {}".format(nec, nav, mic))
     return alpha*nec + beta*nav + gamma*mic
 
 def number_empty_cells(grid):
