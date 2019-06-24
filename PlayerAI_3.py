@@ -2,18 +2,19 @@ import sys
 import time
 from BaseAI_3 import BaseAI
 
+# timelimit fixed by game rules
 timelimit = 0.2
 # set weighting for heuristic function
-alpha = 0.3 # weighting for empty-spaces
-beta = 0.3 # weighting for adjacent and matching tiles
-delta = 0.2 # weighting for putting the max tile in top-left corner
-gamma = 0.2 # weighting for left to right, up to down monotonic ordering
+alpha = 0.3  # weighting for empty-spaces heuristic
+beta = 0.2  # weighting for adjacent and matching tiles heuristic
+delta = 0.1  # weighting for putting the max tile in top-left corner heuristic
+gamma = 0.3  # weighting for left to right, up to down monotonic ordering heuristic
+eta = 0.1  # weighting for smoothness heuristic
 
 class PlayerAI(BaseAI):
 
     def getMove(self, grid):
         self.starttime = time.process_time()
-        print()
         maxdepth = 1
         move = None
         while time.process_time() - self.starttime < timelimit:
@@ -22,7 +23,6 @@ class PlayerAI(BaseAI):
             if newBestMove is not None:
                 # newBestMove will be None if miniMaxDecision timed out
                 move = newBestMove
-                print("maxdepth = {}".format(maxdepth))
             maxdepth += 2
         if move is not None:
             return move[0]
@@ -30,8 +30,8 @@ class PlayerAI(BaseAI):
             return None
 
     def minimaxDecision(self, grid, maxdepth):
-        # get best move for given grid and max depth with expectiminimax algorithm
-        # return none if timed out
+        # return best move for given grid and max depth with expectiminimax algorithm
+        # return None on timeout
         max_move = None
         max_util = 0
         alpha = 0
@@ -48,6 +48,7 @@ class PlayerAI(BaseAI):
         return max_move
 
     def maxValue(self, grid, maxdepth, alpha, beta):
+        # returns max value of state or None for timeout
         # cutoff test
         if maxdepth == 0:
             return eval(grid)
@@ -69,6 +70,7 @@ class PlayerAI(BaseAI):
         return max_util
 
     def minValue(self, grid, maxdepth, alpha, beta):
+        # returns expected minimum value of state or None for timeout
         # cutoff test
         if maxdepth == 0:
             return eval(grid)
@@ -114,20 +116,24 @@ class PlayerAI(BaseAI):
 
 
 def eval(grid):
-    # each component is normalized to 1
-    nec = number_empty_cells(grid)/16
-    nav = number_adjacent_values(grid)/24
+    # each heuristic is normalized to 1
+    # weight each part by coefficients defined at top of file
+    nec = number_empty_cells(grid)
+    nav = number_adjacent_values(grid)
     mic = is_max_in_corner(grid)
     mon = monotonicity(grid)
-    return alpha*nec + beta*nav + delta*mic + gamma*mon
+    smo = smoothness(grid)
+    return alpha*nec + beta*nav + delta*mic + gamma*mon + eta*smo
 
 
 def number_empty_cells(grid):
+    # number of empty cells, normalized to number of spaces
     result = len(grid.getAvailableCells())
-    return result
+    return result/16
 
 
 def number_adjacent_values(grid):
+    # number of adjacent tile pairs with the same values, normalized to maximum possible
     result = 0
     for i in range(4):
         for j in range(4):
@@ -137,7 +143,7 @@ def number_adjacent_values(grid):
             if grid.crossBound((i, j+1)):
                 if grid.getCellValue((i, j+1)) == grid.getCellValue((i, j)) and grid.getCellValue((i, j)) !=0:
                     result += 1
-    return result
+    return result/24
 
 
 def is_max_in_corner(grid):
@@ -177,4 +183,18 @@ def monotonicity(grid):
     numTiles = 16 - len(grid.getAvailableCells())
 
     # and normalize to 1
-    return float(score)/float(2. * numTiles)
+    return score/(2.0 * numTiles)
+
+
+def smoothness(grid):
+    # similar to number_adjacent_tiles, except it also counts tile pairs which differ by a factor of 2
+    result = 0
+    for i in range(4):
+        for j in range(4):
+            if grid.crossBound((i+1, j)):
+                if grid.getCellValue((i, j)) !=0 and (grid.getCellValue((i+1, j)) == grid.getCellValue((i, j)) or  grid.getCellValue((i+1, j)) == grid.getCellValue((i, j))/2 or grid.getCellValue((i+1, j)) == grid.getCellValue((i, j))*2):
+                    result += 1
+            if grid.crossBound((i, j+1)):
+                if grid.getCellValue((i, j)) !=0 and (grid.getCellValue((i, j+1)) == grid.getCellValue((i, j)) or  grid.getCellValue((i, j+1)) == grid.getCellValue((i, j))/2 or grid.getCellValue((i, j+1)) == grid.getCellValue((i, j))*2):
+                    result += 1
+    return result/24
