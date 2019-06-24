@@ -132,10 +132,10 @@ def number_adjacent_values(grid):
     for i in range(4):
         for j in range(4):
             if grid.crossBound((i+1, j)):
-                if grid.getCellValue((i+1, j)) == grid.getCellValue((i, j)) and grid.getCellValue((i,j)) is not None:
+                if grid.getCellValue((i+1, j)) == grid.getCellValue((i, j)) and grid.getCellValue((i, j)) !=0:
                     result += 1
             if grid.crossBound((i, j+1)):
-                if grid.getCellValue((i, j+1)) == grid.getCellValue((i, j)) and grid.getCellValue((i,j)) is not None:
+                if grid.getCellValue((i, j+1)) == grid.getCellValue((i, j)) and grid.getCellValue((i, j)) !=0:
                     result += 1
     return result
 
