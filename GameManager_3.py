@@ -1,3 +1,7 @@
+# Matt Miecnikowski
+# mtm2163
+# COMS W4701 - AI
+
 from Grid_3       import Grid
 from ComputerAI_3 import ComputerAI
 from PlayerAI_3   import PlayerAI

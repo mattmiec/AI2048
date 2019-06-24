@@ -4,10 +4,10 @@ from BaseAI_3 import BaseAI
 
 timelimit = 0.2
 # set weighting for heuristic function
-alpha = 0.25
-beta = 0.25
-delta = 0.25
-gamma = 0.0 # my monotonicity heuristic turned out to be counterproductive so zero it out
+alpha = 0.3 # weighting for empty-spaces
+beta = 0.3 # weighting for adjacent and matching tiles
+delta = 0.2 # weighting for putting the max tile in top-left corner
+gamma = 0.2 # weighting for left to right, up to down monotonic ordering
 
 class PlayerAI(BaseAI):
 
@@ -23,7 +23,7 @@ class PlayerAI(BaseAI):
                 # newBestMove will be None if miniMaxDecision timed out
                 move = newBestMove
                 print("maxdepth = {}".format(maxdepth))
-            maxdepth += 1
+            maxdepth += 2
         if move is not None:
             return move[0]
         else:
@@ -148,42 +148,33 @@ def is_max_in_corner(grid):
 
 
 def monotonicity(grid):
-    # check for non-increasing ordering from top left corner in "snake pattern"
-    # return length of sequence divided by max length (16)
-
-    index_sequence0 = []
-    index_sequence1 = []
+    # check for non-increasing ordering from left to right and top to bottom
+    score = 0
     for i in range(4):
-        for j in range(4):
-            if i % 2 == 1:
-                j = 3 - j
-            index_sequence0.append((i, j))
-            index_sequence0.append((j, i))
+        lastval = grid.getCellValue((i, 0))
+        if lastval != 0:
+            score += 1
+            for j in range(1, 4):
+                val = grid.getCellValue((i,j))
+                if (val == 0) or (val > lastval):
+                    break
+                else:
+                    lastval = val
+                    score += 1
+    for j in range(4):
+        lastval = grid.getCellValue((0, j))
+        if lastval != 0:
+            score += 1
+            for i in range(1, 4):
+                val = grid.getCellValue((i, j))
+                if (val == 0) or (val > lastval):
+                    break
+                else:
+                    lastval = val
+                    score += 1
 
-    # first calculate it by starting towards the right
-    lastval = sys.maxsize
-    length0 = 0
-    for ij in index_sequence0:
-        val = grid.getCellValue(ij)
-        if val is None or val > lastval:
-            break
-        else:
-            length0 += 1
-            lastval = val
-
-    # then calculate it by starting down
-    lastval = sys.maxsize
-    length1 = 0
-    for ij in index_sequence1:
-        val = grid.getCellValue(ij)
-        if val is None or val > lastval:
-            break
-        else:
-            length1 += 1
-            lastval = val
-
-    # then take the maximum
-    maxlen = max(length0, length1)
+    # normalize to number of tiles on board
+    numTiles = 16 - len(grid.getAvailableCells())
 
     # and normalize to 1
-    return float(maxlen)/16
+    return float(score)/float(2. * numTiles)
